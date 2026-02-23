@@ -1,0 +1,95 @@
+:root {
+  --font-sans: "Inter", "Segoe UI", -apple-system, sans-serif;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-control: 24px;
+  --transition-fast: 0.16s ease;
+  --glass-blur: blur(18px);
+}
+
+body.theme-dark {
+  --bg-base: #0f1117;
+  --bg-surface: rgba(24, 28, 39, 0.72);
+  --bg-elevated: #1f2431;
+  --accent-primary: #ff5db1;
+  --text-primary: #f1f4fb;
+  --text-secondary: #c8d0df;
+  --text-muted: #91a0bc;
+  --border-subtle: rgba(255, 255, 255, 0.14);
+  --status-danger: #ff5b62;
+  --shadow-diffuse: 0 12px 30px rgba(0, 0, 0, 0.45);
+  background: radial-gradient(circle at top left, #161a24, #0d1017 60%);
+}
+
+body.theme-light {
+  --bg-base: #f4f7fb;
+  --bg-surface: rgba(255, 255, 255, 0.78);
+  --bg-elevated: #ffffff;
+  --accent-primary: #e63f98;
+  --text-primary: #111826;
+  --text-secondary: #283548;
+  --text-muted: #55627a;
+  --border-subtle: rgba(19, 30, 49, 0.12);
+  --status-danger: #d42f36;
+  --shadow-diffuse: 0 10px 24px rgba(18, 33, 54, 0.14);
+  background: radial-gradient(circle at top left, #edf2fb, #dfe8f8 70%);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  overflow: hidden;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+/* App Shell Grid */
+.lpdf-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+
+.workspace {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.editor-canvas {
+  flex: 1;
+  min-width: 0;
+  background-color: var(--bg-base);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: auto;
+  /* GPU acceleration: promote to compositor layer */
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Base Component Reset */
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+}

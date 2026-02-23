@@ -1,0 +1,6 @@
+# Rust and Tauri generated artifacts
+/target/
+/gen/
+
+# Explicit Tauri package bundle output
+/target/release/bundle/
