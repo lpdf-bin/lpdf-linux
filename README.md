@@ -1,44 +1,102 @@
-# lpdf Linux Workspace
+# lpdf
 
-Linux-focused implementation for `lpdf`.
+Local-first PDF desktop tooling built with Tauri (Rust backend + React frontend).
 
-## Directory Scope
+`lpdf` is designed for privacy and speed: files stay on your machine and are processed locally.
 
-- `ui/` - desktop frontend shell and tests
-- `ui/src-tauri/` - Rust commands and native integration
+## Features
 
-## Setup
+- Edit PDF workspace with page previews and annotation tooling
+- Merge PDFs (including page-level merge/reorder)
+- Organize pages (reorder/remove pages from one file)
+- Delete pages
+- Compress PDF
+- Protect PDF with password and permissions
+- Unlock protected PDF with password
+- Convert PDF to Word (`.docx`) with fallback engine support
+- Add text or image watermark (all pages or selected ranges)
+
+## Repository Layout
+
+- `lpdf-linux/` - active Linux implementation
+  - `ui/` - React + Vite + Bun frontend
+  - `ui/src-tauri/` - Rust command layer
+- `docs/` - architecture, development, and API references
+
+## Quick Start (Linux)
+
+### 1) Install system dependencies
 
 ```bash
-sudo apt install poppler-utils ghostscript qpdf
-cd ui
+sudo apt install poppler-utils ghostscript qpdf libreoffice pandoc
+```
+
+Optional:
+
+```bash
+sudo apt install pdfium
+```
+
+### Cross-platform dependency notes
+
+- Linux: `libreoffice` and `pandoc` are installed with `apt`.
+- macOS: install with Homebrew (`brew install --cask libreoffice` and `brew install pandoc`).
+- Windows: install LibreOffice and Pandoc from official installers and ensure both are in `PATH`.
+- Mobile (Android/iOS): system CLI binaries are not reliably available; use a server-side conversion provider for PDF->Word.
+
+### 2) Install app dependencies
+
+```bash
+cd lpdf-linux/ui
 bun install
+```
+
+### 3) Run desktop app
+
+```bash
 bunx tauri dev
 ```
 
-## Verify
+### 4) Verify
 
 ```bash
-cd ui
 bun run test
 bun run build
 cd src-tauri && cargo test
 ```
 
-## Release Output
+## Install as End User (Linux)
 
-Linux releases publish:
+After a tagged release is published, install with package managers:
 
-- `.deb` package
-- `.rpm` package
-- `.AppImage` fallback binary
+- Debian/Ubuntu:
 
-Repository metadata for apt/dnf is published to GitHub Pages by CI.
+```bash
+curl -fsSL https://<owner>.github.io/<repo>/install/setup-apt.sh | bash
+```
 
-## Related Docs
+- Fedora/RHEL:
 
-- `../README.md`
-- `ui/README.md`
-- `ui/src-tauri/README.md`
-- `../docs/development.md`
-- `../docs/release.md`
+```bash
+curl -fsSL https://<owner>.github.io/<repo>/install/setup-rpm.sh | bash
+```
+
+AppImage artifacts are also published for portable fallback installs.
+
+## Documentation
+
+- `docs/architecture.md`
+- `docs/development.md`
+- `docs/api/tauri-commands.md`
+- `docs/release.md`
+- `CONTRIBUTING.md`
+- `CODE_OF_CONDUCT.md`
+- `SECURITY.md`
+
+## Contributing
+
+See `CONTRIBUTING.md` for setup, coding standards, and pull request workflow.
+
+## License
+
+MIT. See `LICENSE`.
