@@ -3,9 +3,9 @@ pub mod core;
 pub mod error;
 
 use commands::pdf::{
-    doc_compress, doc_convert_pdf_to_word, doc_delete_pages, doc_get_thumbnail, doc_merge,
-    doc_merge_pages, doc_open, doc_protect_pdf, doc_read_bytes, doc_save, doc_unlock_pdf,
-    doc_watermark_pdf,
+    doc_compress, doc_convert_pdf_to_excel, doc_convert_pdf_to_ppt, doc_convert_pdf_to_word,
+    doc_delete_pages, doc_get_meta, doc_get_thumbnail, doc_merge, doc_merge_pages, doc_open,
+    doc_protect_pdf, doc_read_bytes, doc_save, doc_unlock_pdf, doc_watermark_pdf,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -15,6 +15,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             doc_open,
+            doc_get_meta,
             doc_get_thumbnail,
             doc_merge,
             doc_merge_pages,
@@ -23,6 +24,8 @@ pub fn run() {
             doc_protect_pdf,
             doc_unlock_pdf,
             doc_convert_pdf_to_word,
+            doc_convert_pdf_to_excel,
+            doc_convert_pdf_to_ppt,
             doc_watermark_pdf,
             doc_save,
             doc_read_bytes

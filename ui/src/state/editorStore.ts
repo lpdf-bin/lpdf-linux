@@ -3,7 +3,7 @@ import { arrayMove } from "@dnd-kit/sortable";
 
 export type AnnotationType = "text" | "link" | "form-text" | "whiteout";
 
-export type AppToastKind = "success" | "warning" | "error";
+export type AppToastKind = "success" | "warning" | "error" | "info";
 
 export interface AppToast {
 	id: string;

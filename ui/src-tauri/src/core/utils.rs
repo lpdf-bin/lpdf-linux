@@ -19,6 +19,24 @@ pub fn ensure_docx_extension(path: &str) -> String {
     }
 }
 
+/// Ensures that a given file path ends with the `.xlsx` extension.
+pub fn ensure_xlsx_extension(path: &str) -> String {
+    if path.to_ascii_lowercase().ends_with(".xlsx") {
+        path.to_string()
+    } else {
+        format!("{path}.xlsx")
+    }
+}
+
+/// Ensures that a given file path ends with the `.pptx` extension.
+pub fn ensure_pptx_extension(path: &str) -> String {
+    if path.to_ascii_lowercase().ends_with(".pptx") {
+        path.to_string()
+    } else {
+        format!("{path}.pptx")
+    }
+}
+
 /// Creates a standard `std::process::Command` with the proper PATH footprint
 /// ensuring that binaries installed via package managers (like Homebrew on macOS
 /// or apt on Linux) are locatable.

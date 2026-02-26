@@ -48,15 +48,7 @@ export const InspectorPanel: React.FC = () => {
 
 				<div className="prop-actions">
 					<button
-						className="btn-primary"
-						style={{
-							width: "100%",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "8px",
-							marginTop: "16px",
-						}}
+						className="btn-primary inspector-action-btn"
 						onClick={() => rotateActivePage(90)}
 					>
 						<RotateCw size={16} /> Rotate 90°
@@ -67,16 +59,7 @@ export const InspectorPanel: React.FC = () => {
 				{selectedAnn && (
 					<>
 						<hr className="divider" />
-						<div
-							style={{
-								fontSize: 11,
-								fontWeight: 600,
-								textTransform: "uppercase",
-								color: "var(--text-muted)",
-								letterSpacing: "0.5px",
-								marginBottom: 4,
-							}}
-						>
+						<div className="inspector-section-label">
 							Selected Object
 						</div>
 						<div className="prop-row">
@@ -114,22 +97,11 @@ export const InspectorPanel: React.FC = () => {
 						{selectedAnn.color && (
 							<div className="prop-row">
 								<span className="prop-label">Color</span>
-								<span
-									className="prop-val"
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: 4,
-									}}
-								>
+								<span className="prop-val prop-color-value">
 									<span
+										className="prop-color-swatch"
 										style={{
-											width: 12,
-											height: 12,
-											borderRadius: "50%",
 											backgroundColor: selectedAnn.color,
-											display: "inline-block",
-											border: "1px solid var(--border-subtle)",
 										}}
 									/>
 									{selectedAnn.color}
@@ -153,16 +125,7 @@ export const InspectorPanel: React.FC = () => {
 							</div>
 						)}
 						<button
-							className="btn-primary"
-							style={{
-								width: "100%",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								gap: "8px",
-								marginTop: "8px",
-								backgroundColor: "var(--status-danger)",
-							}}
+							className="btn-primary inspector-action-btn danger"
 							onClick={handleDeleteSelected}
 						>
 							<Trash2 size={16} /> Delete

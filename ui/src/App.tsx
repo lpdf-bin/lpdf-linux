@@ -7,7 +7,7 @@ import { EditorCanvas } from "./components/workspace/EditorCanvas";
 import { InspectorPanel } from "./components/workspace/InspectorPanel";
 import { FileOpenPanel } from "./components/home/FileOpenPanel";
 import { SettingsModal } from "./components/common/SettingsModal";
-import { CheckCircle2, TriangleAlert, X } from "lucide-react";
+import { CheckCircle2, CircleAlert, Info, TriangleAlert, X } from "lucide-react";
 import "./styles/tokens.css";
 import "./styles/app.css";
 
@@ -53,8 +53,12 @@ export default function App() {
 							<div className="toast-icon">
 								{toast.kind === "success" ? (
 									<CheckCircle2 size={18} />
-								) : (
+								) : toast.kind === "info" ? (
+									<Info size={18} />
+								) : toast.kind === "warning" ? (
 									<TriangleAlert size={18} />
+								) : (
+									<CircleAlert size={18} />
 								)}
 							</div>
 							<div className="toast-content">

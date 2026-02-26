@@ -21,6 +21,11 @@ export interface OpenDocResponse {
 	file_size: number;
 }
 
+export interface DocMetaResponse {
+	page_count: number;
+	file_size: number;
+}
+
 export interface ThumbnailResponse {
 	base64_image: string;
 }
@@ -62,7 +67,7 @@ export interface ProtectPdfResponse {
 	protected: boolean;
 }
 
-export interface ConvertPdfToWordResponse {
+export interface ConvertPdfResponse {
 	output_path: string;
 	engine: string;
 }
@@ -105,6 +110,10 @@ export async function openDocumentDialog(): Promise<OpenDocResponse | null> {
 		path: normalized,
 	});
 	return res;
+}
+
+export async function getDocumentMetadata(path: string): Promise<DocMetaResponse> {
+	return invoke<DocMetaResponse>("doc_get_meta", { path });
 }
 
 // Step 10: getThumbnail IPC wrapper
@@ -406,7 +415,7 @@ export async function unlockPdfWithPassword(
 	});
 }
 
-export async function convertPdfToWordDialogFlow(): Promise<ConvertPdfToWordResponse | null> {
+export async function convertPdfToWordDialogFlow(): Promise<ConvertPdfResponse | null> {
 	const selected = await open({
 		multiple: false,
 		filters: [{ name: "PDF", extensions: ["pdf"] }],
@@ -421,7 +430,49 @@ export async function convertPdfToWordDialogFlow(): Promise<ConvertPdfToWordResp
 	});
 	if (!outputPath) return null;
 
-	return invoke<ConvertPdfToWordResponse>("doc_convert_pdf_to_word", {
+	return invoke<ConvertPdfResponse>("doc_convert_pdf_to_word", {
+		inputPath: normalizeDialogPath(selected),
+		outputPath: normalizeDialogPath(outputPath),
+	});
+}
+
+export async function convertPdfToExcelDialogFlow(): Promise<ConvertPdfResponse | null> {
+	const selected = await open({
+		multiple: false,
+		filters: [{ name: "PDF", extensions: ["pdf"] }],
+	});
+	if (!selected || Array.isArray(selected)) {
+		return null;
+	}
+
+	const outputPath = await save({
+		filters: [{ name: "Excel", extensions: ["xlsx"] }],
+		defaultPath: "converted.xlsx",
+	});
+	if (!outputPath) return null;
+
+	return invoke<ConvertPdfResponse>("doc_convert_pdf_to_excel", {
+		inputPath: normalizeDialogPath(selected),
+		outputPath: normalizeDialogPath(outputPath),
+	});
+}
+
+export async function convertPdfToPptDialogFlow(): Promise<ConvertPdfResponse | null> {
+	const selected = await open({
+		multiple: false,
+		filters: [{ name: "PDF", extensions: ["pdf"] }],
+	});
+	if (!selected || Array.isArray(selected)) {
+		return null;
+	}
+
+	const outputPath = await save({
+		filters: [{ name: "PowerPoint", extensions: ["pptx"] }],
+		defaultPath: "converted.pptx",
+	});
+	if (!outputPath) return null;
+
+	return invoke<ConvertPdfResponse>("doc_convert_pdf_to_ppt", {
 		inputPath: normalizeDialogPath(selected),
 		outputPath: normalizeDialogPath(outputPath),
 	});

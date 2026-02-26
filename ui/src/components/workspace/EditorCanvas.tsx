@@ -679,6 +679,7 @@ export const EditorCanvas: React.FC = () => {
 
 		return (
 			<div
+				className="annotation-drag-preview"
 				style={{
 					position: "absolute",
 					left: x,
@@ -702,6 +703,15 @@ export const EditorCanvas: React.FC = () => {
 				: "transform 0.1s cubic-bezier(0.2, 0, 0, 1)",
 		}),
 		[panOffset.x, panOffset.y, zoomLevel, isPanning],
+	);
+
+	const pageRenderDpr = useMemo(
+		() =>
+			Math.min(
+				2.25,
+				window.devicePixelRatio * Math.max(1, zoomLevel),
+			),
+		[zoomLevel],
 	);
 
 	const handleLinkIntercept = useCallback(
@@ -777,10 +787,7 @@ export const EditorCanvas: React.FC = () => {
 								<PdfPagePreview
 									pageNumber={activePage.number}
 									width={612}
-									devicePixelRatio={
-										window.devicePixelRatio *
-										Math.max(1, zoomLevel)
-									}
+									devicePixelRatio={pageRenderDpr}
 									renderTextLayer={true}
 									renderAnnotationLayer={true}
 									className="pdf-page-react"
@@ -813,6 +820,7 @@ export const EditorCanvas: React.FC = () => {
 
 						{inputPos && activeTool === "text" && (
 							<input
+								className="annotation-text-input"
 								autoFocus
 								type="text"
 								value={inputText}
@@ -823,14 +831,9 @@ export const EditorCanvas: React.FC = () => {
 									position: "absolute",
 									left: inputPos.x,
 									top: inputPos.y,
-									background: "rgba(0,0,0,0.8)",
 									color: textColor,
 									fontFamily: textFontFamily,
 									fontSize: textFontSize,
-									border: "1px solid var(--accent-primary)",
-									padding: "4px 8px",
-									outline: "none",
-									borderRadius: "4px",
 								}}
 								placeholder="Type and press Enter..."
 							/>

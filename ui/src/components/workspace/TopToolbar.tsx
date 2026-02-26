@@ -241,8 +241,7 @@ export const TopToolbar: React.FC = () => {
 			</div>
 
 			<div
-				className="toolbar-group center"
-				style={{ flex: 1, justifyContent: "center" }}
+				className="toolbar-group center toolbar-group-fill"
 			>
 				{isDocLoaded && (
 					<>
@@ -296,22 +295,18 @@ export const TopToolbar: React.FC = () => {
 				{isDocLoaded && (
 					<>
 						<button
-							className="icon-btn"
+							className={`icon-btn ${past.length === 0 ? "is-disabled" : ""}`}
 							title="Undo (Ctrl+Z)"
 							onClick={undo}
 							disabled={past.length === 0}
-							style={{ opacity: past.length === 0 ? 0.3 : 1 }}
 						>
 							<Undo size={18} />
 						</button>
 						<button
-							className="icon-btn"
+							className={`icon-btn ${future.length === 0 ? "is-disabled" : ""}`}
 							title="Redo (Ctrl+Y)"
 							onClick={redo}
 							disabled={future.length === 0}
-							style={{
-								opacity: future.length === 0 ? 0.3 : 1,
-							}}
 						>
 							<Redo size={18} />
 						</button>

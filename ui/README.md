@@ -6,7 +6,7 @@ Frontend application for the Tauri desktop app.
 
 - Home actions: edit, merge, compress, delete pages, organize
 - Security actions: protect, unlock, watermark
-- Conversion action: PDF -> Word
+- Conversion actions: PDF -> Word, PDF -> Excel, PDF -> PowerPoint
 
 ## Home Layout Notes
 

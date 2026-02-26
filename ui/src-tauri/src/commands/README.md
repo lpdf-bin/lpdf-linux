@@ -21,6 +21,8 @@ Purpose: Tauri IPC command handlers and request/response boundaries.
 - `doc_protect_pdf`
 - `doc_unlock_pdf`
 - `doc_convert_pdf_to_word`
+- `doc_convert_pdf_to_excel`
+- `doc_convert_pdf_to_ppt`
 - `doc_watermark_pdf`
 
 ## Boundaries

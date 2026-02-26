@@ -231,13 +231,12 @@ export const ContextualSubBar: React.FC = () => {
 						</select>
 					</div>
 					<div className="divider-vertical" />
-					<div className="subbar-group" style={{ flex: 1 }}>
+					<div className="subbar-group subbar-group-fill">
 						<ExternalLink size={14} />
 						<input
 							type="text"
-							className="subbar-input"
+							className="subbar-input subbar-input-fill"
 							placeholder="https://example.com"
-							style={{ width: "100%" }}
 						/>
 					</div>
 				</>

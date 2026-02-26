@@ -1,9 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { useEditorStore } from "../../state/editorStore";
-import { FileImage, FileText, FileUp, Loader2, LockOpen, Pencil, Shield, Stamp, Trash2 } from "lucide-react";
+import {
+	FileImage,
+	FileSpreadsheet,
+	FileText,
+	FileUp,
+	Loader2,
+	LockOpen,
+	Pencil,
+	Presentation,
+	Shield,
+	Stamp,
+	Trash2,
+} from "lucide-react";
 import {
 	applyWatermarkWithSettings,
 	compressPdfDialogFlow,
+	convertPdfToExcelDialogFlow,
+	convertPdfToPptDialogFlow,
 	convertPdfToWordDialogFlow,
 	deletePagesWithSelection,
 	executeOrganizePages,
@@ -14,13 +28,13 @@ import {
 	selectFilesForMerge,
 	executeMergePages,
 	openDocumentDialog,
+	getDocumentMetadata,
 	type OpenDocResponse,
 	type MergePageItem,
 	type ProtectPdfPermissions,
 	type WatermarkMode,
 	type WatermarkPosition,
 } from "../../api/commands";
-import { invoke } from "@tauri-apps/api/core";
 import logo from "../../assets/logo.png";
 import {
 	DndContext,
@@ -43,6 +57,7 @@ import {
 	OrganizePanel,
 	type OrganizePageItem,
 } from "./organize/OrganizePanel";
+import { mapWithConcurrency } from "../../utils/concurrency";
 
 // A locally unique ID wrapper for the sortable grid
 interface SortablePageItem extends MergePageItem {
@@ -116,6 +131,8 @@ type HomeAction =
 	| "protect"
 	| "unlock"
 	| "convert-word"
+	| "convert-excel"
+	| "convert-ppt"
 	| "watermark";
 
 const ACTION_COPY: Record<
@@ -126,47 +143,57 @@ const ACTION_COPY: Record<
 		title: "Edit PDF",
 		description:
 			"Open a single PDF, edit annotations, and delete pages locally.",
-		cta: "Start Editing",
+		cta: "Edit",
 	},
 	merge: {
 		title: "Merge PDF",
 		description: "Combine multiple PDF files into one output document.",
-		cta: "Start Merge",
+		cta: "Merge",
 	},
 	compress: {
 		title: "Compress PDF",
 		description: "Reduce PDF size and save a compressed copy.",
-		cta: "Start Compression",
+		cta: "Compress",
 	},
 	"delete-pages": {
 		title: "Delete Pages",
 		description: "Remove selected pages from a PDF and save a new file.",
-		cta: "Start Delete",
+		cta: "Delete",
 	},
 	organize: {
 		title: "Organize PDF",
 		description: "Reorder or remove pages and export a reorganized PDF.",
-		cta: "Start Organizing",
+		cta: "Organize",
 	},
 	protect: {
 		title: "Protect PDF",
 		description: "Protect file with password and custom permissions.",
-		cta: "Start Protecting",
+		cta: "Protect",
 	},
 	unlock: {
 		title: "Unlock PDF",
 		description: "Remove restrictions and password from PDF files.",
-		cta: "Start Unlocking",
+		cta: "Unlock",
 	},
 	"convert-word": {
 		title: "Convert to Word",
 		description: "Convert PDF into editable DOCX output.",
-		cta: "Start Converting",
+		cta: "Convert",
+	},
+	"convert-excel": {
+		title: "Convert to Excel",
+		description: "Convert PDF into editable XLSX spreadsheet output.",
+		cta: "Convert",
+	},
+	"convert-ppt": {
+		title: "Convert to PowerPoint",
+		description: "Convert PDF into editable PPTX presentation output.",
+		cta: "Convert",
 	},
 	watermark: {
 		title: "Watermark PDF",
 		description: "Add text or image watermark to your PDF.",
-		cta: "Start Watermarking",
+		cta: "Watermark",
 	},
 };
 
@@ -311,6 +338,9 @@ export const FileOpenPanel: React.FC = () => {
 	const toastWarning = (title: string, message: string) =>
 		pushToast({ kind: "warning", title, message, timeoutMs: 3000 });
 
+	const toastInfo = (title: string, message: string) =>
+		pushToast({ kind: "info", title, message, timeoutMs: 4500 });
+
 	const handleOpen = async () => {
 		setIsLoading(true);
 		setStatusMessage("");
@@ -343,18 +373,18 @@ export const FileOpenPanel: React.FC = () => {
 			try {
 				const res = await selectFilesForMerge();
 				if (res && res.length > 0) {
-					const metas = await Promise.all(
-						res.map(async (path) => {
+					const metas = await mapWithConcurrency(
+						res,
+						6,
+						async (path) => {
 							try {
-								const docMeta = await invoke<OpenDocResponse>("doc_open", {
-									path,
-								});
+								const docMeta = await getDocumentMetadata(path);
 								return { path, pageCount: docMeta.page_count };
 							} catch (err) {
 								console.error(`Failed to analyze ${path}:`, err);
 								return null;
 							}
-						}),
+						},
 					);
 
 					const newItems: SortablePageItem[] = [];
@@ -457,21 +487,23 @@ export const FileOpenPanel: React.FC = () => {
 				setDeletePages(new Set());
 				setDeleteThumbs({});
 
-				const thumbs: Record<number, string> = {};
-				await Promise.all(
-					Array.from({ length: res.page_count }, (_, i) => i + 1).map(
-						async (pageNum) => {
-							try {
-								thumbs[pageNum] = await getThumbnail(
-									res.doc_id,
-									pageNum - 1,
-								);
-							} catch {
-								thumbs[pageNum] = "";
-							}
-						},
-					),
+				const pageNumbers = Array.from(
+					{ length: res.page_count },
+					(_, i) => i + 1,
 				);
+				const thumbEntries = await mapWithConcurrency(
+					pageNumbers,
+					8,
+					async (pageNum) => {
+						try {
+							const image = await getThumbnail(res.doc_id, pageNum - 1);
+							return [pageNum, image] as const;
+						} catch {
+							return [pageNum, ""] as const;
+						}
+					},
+				);
+				const thumbs = Object.fromEntries(thumbEntries);
 				setDeleteThumbs(thumbs);
 				setStatusMessage("PDF loaded. Select pages to delete.");
 				return;
@@ -685,7 +717,8 @@ export const FileOpenPanel: React.FC = () => {
 
 	const handleConvertWord = async () => {
 		setIsLoading(true);
-		setStatusMessage("");
+		setStatusMessage("Preparing PDF to Word conversion...");
+		toastInfo("Convert Started", "Converting PDF to Word in local offline mode.");
 		try {
 			const res = await convertPdfToWordDialogFlow();
 			if (!res) {
@@ -699,6 +732,54 @@ export const FileOpenPanel: React.FC = () => {
 			toastSuccess(
 				"Convert Complete",
 				`Converted using ${res.engine}.`,
+			);
+		} catch (error) {
+			setStatusMessage(`Convert failed: ${toErrorMessage(error)}`);
+			toastError("Convert Failed", toErrorMessage(error));
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleConvertExcel = async () => {
+		setIsLoading(true);
+		setStatusMessage("Converting PDF to Excel...");
+		toastInfo("Convert Started", "Converting PDF to Excel in local offline mode.");
+		try {
+			const res = await convertPdfToExcelDialogFlow();
+			if (!res) {
+				setStatusMessage("Convert cancelled.");
+				toastWarning("Convert Canceled", "Conversion canceled.");
+				return;
+			}
+			setStatusMessage(`Converted. Saved to ${res.output_path}`);
+			toastSuccess(
+				"Convert Complete",
+				`PDF to Excel done via ${res.engine}.`,
+			);
+		} catch (error) {
+			setStatusMessage(`Convert failed: ${toErrorMessage(error)}`);
+			toastError("Convert Failed", toErrorMessage(error));
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleConvertPpt = async () => {
+		setIsLoading(true);
+		setStatusMessage("Converting PDF to PowerPoint...");
+		toastInfo("Convert Started", "Converting PDF to PowerPoint in local offline mode.");
+		try {
+			const res = await convertPdfToPptDialogFlow();
+			if (!res) {
+				setStatusMessage("Convert cancelled.");
+				toastWarning("Convert Canceled", "Conversion canceled.");
+				return;
+			}
+			setStatusMessage(`Converted. Saved to ${res.output_path}`);
+			toastSuccess(
+				"Convert Complete",
+				`PDF to PowerPoint done via ${res.engine}.`,
 			);
 		} catch (error) {
 			setStatusMessage(`Convert failed: ${toErrorMessage(error)}`);
@@ -774,7 +855,9 @@ export const FileOpenPanel: React.FC = () => {
 			? mergeItems.length > 0
 				? "Execute Merge"
 				: "Select Files"
-			: selectedAction === "convert-word"
+			: selectedAction === "convert-word" ||
+			  selectedAction === "convert-excel" ||
+			  selectedAction === "convert-ppt"
 				? "Convert PDF"
 			: selectedAction === "watermark"
 				? watermarkDoc
@@ -805,6 +888,10 @@ export const FileOpenPanel: React.FC = () => {
 				? handleCompress
 				: selectedAction === "convert-word"
 					? handleConvertWord
+				: selectedAction === "convert-excel"
+					? handleConvertExcel
+				: selectedAction === "convert-ppt"
+					? handleConvertPpt
 				: selectedAction === "unlock"
 					? handleUnlock
 				: selectedAction === "protect"
@@ -817,7 +904,10 @@ export const FileOpenPanel: React.FC = () => {
 					? handleDeletePages
 					: handleOpen;
 
-	const showPrimaryActionButton = selectedAction !== "convert-word";
+	const showPrimaryActionButton =
+		selectedAction !== "convert-word" &&
+		selectedAction !== "convert-excel" &&
+		selectedAction !== "convert-ppt";
 
 	return (
 		<div className="open-panel-container">
@@ -841,7 +931,6 @@ export const FileOpenPanel: React.FC = () => {
 										"compress",
 										"delete-pages",
 										"organize",
-										"convert-word",
 									] as HomeAction[]
 								).map((action) => (
 									<div key={action} className="home-action-card">
@@ -884,6 +973,39 @@ export const FileOpenPanel: React.FC = () => {
 												<Stamp size={16} />
 											) : (
 												<LockOpen size={16} />
+											)}
+											{ACTION_COPY[action].cta}
+										</button>
+									</div>
+								))}
+							</div>
+						</section>
+
+						<section className="home-section-block">
+							<h4 className="home-section-title">Convert from PDF</h4>
+							<div className="home-actions-grid home-security-grid">
+								{(
+									[
+										"convert-word",
+										"convert-excel",
+										"convert-ppt",
+									] as HomeAction[]
+								).map((action) => (
+									<div key={action} className="home-action-card">
+										<div className="home-card-body">
+											<h3>{ACTION_COPY[action].title}</h3>
+											<p>{ACTION_COPY[action].description}</p>
+										</div>
+										<button
+											className="btn-primary"
+											onClick={() => setSelectedAction(action)}
+										>
+											{action === "convert-word" ? (
+												<FileText size={16} />
+											) : action === "convert-excel" ? (
+												<FileSpreadsheet size={16} />
+											) : (
+												<Presentation size={16} />
 											)}
 											{ACTION_COPY[action].cta}
 										</button>
@@ -947,52 +1069,51 @@ export const FileOpenPanel: React.FC = () => {
 									</DndContext>
 								) : null}
 								<div
-									className="delete-pages-input-row merge-action-row"
-									style={{ marginTop: 16 }}
+									className="delete-pages-input-row merge-action-row merge-action-row-spaced"
 								>
-									<button
-										className="btn-primary"
-									onClick={async () => {
-										const next =
-											await selectFilesForMerge();
-										if (next.length) {
-											const metas = await Promise.all(
-												next.map(async (path) => {
-													try {
-														const docMeta = await invoke<OpenDocResponse>(
-															"doc_open",
-															{ path },
-														);
-														return { path, pageCount: docMeta.page_count };
-													} catch (err) {
-														console.warn(
-															"Skipping unreadable page count",
-															err,
-														);
-														return null;
-													}
-												}),
-											);
-											const added: SortablePageItem[] = [];
-											for (const item of metas) {
-												if (!item) continue;
-												for (let p = 1; p <= item.pageCount; p++) {
-													added.push({
-														id: `${item.path}-page-${p}-${crypto.randomUUID()}`,
-														path: item.path,
-														pageNumber: p,
-													});
-												}
+								<button
+									className="btn-primary"
+								onClick={async () => {
+									const next = await selectFilesForMerge();
+									if (!next.length) return;
+
+									const metas = await mapWithConcurrency(
+										next,
+										6,
+										async (path) => {
+											try {
+												const docMeta = await getDocumentMetadata(path);
+												return {
+													path,
+													pageCount: docMeta.page_count,
+												};
+											} catch (err) {
+												console.warn(
+													"Skipping unreadable page count",
+													err,
+												);
+												return null;
 											}
-											if (added.length > 0) {
-													setMergeItems((prev) => [
-														...prev,
-														...added,
-													]);
-												}
-											}
-										}}
-									>
+										},
+									);
+
+									const added: SortablePageItem[] = [];
+									for (const item of metas) {
+										if (!item) continue;
+										for (let p = 1; p <= item.pageCount; p++) {
+											added.push({
+												id: `${item.path}-page-${p}-${crypto.randomUUID()}`,
+												path: item.path,
+												pageNumber: p,
+											});
+										}
+									}
+
+									if (added.length > 0) {
+										setMergeItems((prev) => [...prev, ...added]);
+									}
+								}}
+								>
 										Add More Files
 									</button>
 								</div>
@@ -1318,8 +1439,26 @@ export const FileOpenPanel: React.FC = () => {
 						{selectedAction === "convert-word" ? (
 							<div className="delete-pages-panel security-form-panel">
 								<div className="delete-pages-input-row security-inputs-row">
-									<button className="btn-primary" onClick={handleConvertWord}>
-										<FileText size={16} /> Convert PDF to Word
+									<button className="btn-primary" onClick={handleConvertWord} disabled={isLoading}>
+										{isLoading ? <Loader2 size={16} className="spin" /> : <FileText size={16} />} Convert PDF to Word
+									</button>
+								</div>
+							</div>
+						) : null}
+						{selectedAction === "convert-excel" ? (
+							<div className="delete-pages-panel security-form-panel">
+								<div className="delete-pages-input-row security-inputs-row">
+									<button className="btn-primary" onClick={handleConvertExcel} disabled={isLoading}>
+										{isLoading ? <Loader2 size={16} className="spin" /> : <FileSpreadsheet size={16} />} Convert PDF to Excel
+									</button>
+								</div>
+							</div>
+						) : null}
+						{selectedAction === "convert-ppt" ? (
+							<div className="delete-pages-panel security-form-panel">
+								<div className="delete-pages-input-row security-inputs-row">
+									<button className="btn-primary" onClick={handleConvertPpt} disabled={isLoading}>
+										{isLoading ? <Loader2 size={16} className="spin" /> : <Presentation size={16} />} Convert PDF to PowerPoint
 									</button>
 								</div>
 							</div>

@@ -29,3 +29,5 @@ tauri-plugin-dialog = "2.0.0-beta.0"
 pdfium-render = "0.8.37"
 image = "0.25.6"
 tauri-plugin-shell = "2.0.0-rc"
+rayon = "1.11.0"
+zip = { version = "2.2.2", default-features = false, features = ["deflate"] }
