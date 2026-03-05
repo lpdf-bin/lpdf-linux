@@ -58,6 +58,4 @@ mod tests {
         let result = doc_open(test_pdf_path.to_string());
         assert!(result.is_ok());
     }
-
-    // Additional tests removed for brevity, check git history for full suite.
 }
